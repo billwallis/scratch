@@ -1,0 +1,25 @@
+# echo "poe_tasks.toml" >> .git/info/exclude
+verbosity = -1
+
+[tasks]
+lint.shell = """
+    echo "\\033[0;34mpre-commit checks\\033[0m"
+    SKIP=identity pre-commit run --all-files --hook-stage pre-commit
+    echo "\\033[0;34mpre-push checks\\033[0m"
+    SKIP=identity pre-commit run --all-files --hook-stage pre-push
+"""
+clean.shell = """
+    dbt clean --no-clean-project-files-only
+    rm -rf dist/
+    rm -rf logs/
+    dbt deps
+"""
+docs.shell = """
+    dbt docs generate
+    uvx --from dbt-colibri colibri generate
+    open dist/index.html
+    dbt docs serve
+"""
+cte-lineage.shell = """
+    find -P target/compiled -name '*.sql' | xargs -n 1 -P 8 lineage
+"""
