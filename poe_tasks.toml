@@ -1,4 +1,4 @@
-# echo "poe_tasks.toml" >> .git/info/exclude
+# echo "\npoe_tasks.toml" >> .git/info/exclude
 verbosity = -1
 
 [tasks]
