@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/pre-commit-config.json
+# echo "\n.pre-commit-config.yaml" >> .git/info/exclude
 ---
 ci:
   autoupdate_schedule: quarterly
