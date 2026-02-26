@@ -1,5 +1,7 @@
 # echo "\npoe_tasks.toml" >> .git/info/exclude
+
 verbosity = -1
+envfile.optional = ".env"
 
 [tasks]
 lint.shell = """
@@ -23,3 +25,9 @@ docs.shell = """
 cte-lineage.shell = """
     find -P target/compiled -name '*.sql' | xargs -n 1 -P 8 lineage
 """
+render.shell = """
+    dbt compile --quiet --inline "{{ ref('${model_name}') }}"
+"""
+render.args = [
+    {name = "model_name", positional = true, required = true},
+]

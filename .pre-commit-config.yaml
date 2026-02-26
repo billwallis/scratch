@@ -42,13 +42,13 @@ repos:
         name: Validate pre-commit CI config
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.23
+    rev: 0.10.4
     hooks:
       - id: uv-lock
         name: Check that the lock file is up-to-date
 
   - repo: https://github.com/billwallis/bills-hooks
-    rev: v0.0.6
+    rev: v0.0.8
     hooks:
       - id: tidy-gitkeep
         name: Remove redundant .gitkeep files
