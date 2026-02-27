@@ -5,6 +5,9 @@ ci:
   autoupdate_schedule: quarterly
   skip: ["identity", "uv-lock"]
 
+default_install_hook_types: ["pre-commit", "pre-push"]
+default_stages: ["pre-commit"]
+
 repos:
   - repo: meta
     hooks:
@@ -42,7 +45,7 @@ repos:
         name: Validate pre-commit CI config
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.10.4
+    rev: 0.10.6
     hooks:
       - id: uv-lock
         name: Check that the lock file is up-to-date
@@ -52,3 +55,97 @@ repos:
     hooks:
       - id: tidy-gitkeep
         name: Remove redundant .gitkeep files
+
+  - repo: https://github.com/dbt-labs/dbt-autofix
+    rev: v0.19.0  # v0.20.0 doesn't install correctly
+    hooks:
+      - id: dbt-autofix-fix
+        args: ["--all"]
+
+  - repo: local
+    hooks:
+      # Python pyproject.toml file
+      - <<: &json-schema-hook
+          entry: check-jsonschema
+          pass_filenames: true
+          language: python
+          additional_dependencies: ["check-jsonschema"]
+          # These call remote URLs, so run on pre-push to avoid slowing down commits
+          stages: ["pre-push"]
+        id: check-pyproject-schema
+        name: Validate pyproject.toml schema
+        files: pyproject.toml
+        args: ["--schemafile", "https://json.schemastore.org/pyproject.json"]
+
+      # dbt YAML files
+      - <<: *json-schema-hook
+        id: check-dbt-project-schema
+        name: Validate dbt_project.yml schema
+        files: dbt_project.yml
+        args: ["--schemafile", "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_project-latest.json"]
+      - <<: *json-schema-hook
+        id: check-packages-schema
+        name: Validate packages.yml schema
+        files: packages.yml
+        args: ["--schemafile", "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json"]
+      - <<: *json-schema-hook
+        id: check-selectors-schema
+        name: Validate selectors.yml schema
+        files: selectors.yml
+        args: ["--schemafile", "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/selectors-latest.json"]
+      - <<: *json-schema-hook
+        id: check-dbt-yaml-files-schemas
+        name: Validate various dbt YAML file schemas
+        files: ^(macros|models|analysis|snapshots)/.*\.yml$
+        args: ["--schemafile", "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_yml_files-latest.json"]
+
+#  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
+#    rev: v2.0.8
+#    hooks:
+#      - id: dbt-parse
+#        name: Parse dbt project files
+#        stages: ["pre-push"]
+#      - id: dbt-docs-generate
+#        name: Generate dbt documentation
+#        args: ["--cmd-flags", "++no-compile"]
+#        stages: ["pre-push"]
+#
+#        # Script checks
+#      - id: check-script-semicolon
+#        name: Check script don't end with a semicolon
+#        stages: ["pre-push"]
+#      - id: check-script-has-no-table-name
+#        name: Check script has no hardcoded table names
+#        stages: ["pre-push"]
+#      - id: check-script-ref-and-source
+#        name: Check script uses ref() or source() functions
+#        stages: ["pre-push"]
+#
+#        # Model checks
+#      - id: check-model-has-properties-file
+#        name: Check model exists in a YAML file
+#        stages: ["pre-push"]
+#      - id: check-model-has-description
+#        name: Check model has a description
+#        stages: ["pre-push"]
+#      - id: check-model-name-contract
+#        name: Check staging model name convention
+#        args: [--pattern, "(src_|stg_).*"]
+#        files: ^models/staging/
+#        stages: ["pre-push"]
+#      - id: check-model-name-contract
+#        name: Check intermediate model name convention
+#        args: [--pattern, "(int_).*"]
+#        files: ^models/intermediate/
+#        stages: ["pre-push"]
+#
+#        # Column checks
+#      - id: check-model-has-all-columns
+#        name: Check model has all columns in the YAML file
+#        stages: ["pre-push"]
+#      - id: check-model-columns-have-desc
+#        name: Check columns have a description
+#        stages: ["pre-push"]
+#      - id: check-column-desc-are-same
+#        name: Check column descriptions are the same for similarly named columns
+#        stages: ["pre-push"]
