@@ -1,0 +1,17 @@
+###    global git config  (~/.gitconfig)
+
+[core]
+    autocrlf = input
+    editor = nano
+    excludesfile = ~/.gitignore  # Switch to absolute path
+[fetch]
+    prune = true
+[grep]
+    extendedRegexp = true
+[init]
+    defaultBranch = main
+[push]
+    autoSetupRemote = true
+[user]
+    name = ...
+    email = ...

@@ -1,0 +1,11 @@
+###    global git ignore  (~/.gitignore)
+
+# IDE and system files
+.idea/
+.vscode/
+.DS_Store
+
+# My stuff
+.scratch/
+.envrc
+poe_tasks.toml
