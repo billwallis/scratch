@@ -1,5 +1,3 @@
-# echo "\npoe_tasks.toml" >> .git/info/exclude
-
 verbosity = -1
 envfile.optional = ".env"
 
@@ -26,8 +24,33 @@ cte-lineage.shell = """
     find -P target/compiled -name '*.sql' | xargs -n 1 -P 8 lineage
 """
 render.shell = """
-    dbt compile --quiet --inline "{{ ref('${model_name}') }}"
+    uvx py-wait-until --message "Rendering model..." \
+        dbt compile --quiet --inline "{{ ref('${model_name}') }}"
 """
 render.args = [
     {name = "model_name", positional = true, required = true},
 ]
+dump-prod-state.shell = """
+    if [ "$(git branch --show-current)" = "main" ]; then
+        echo "error: must be on a feature branch"
+        exit 1
+    fi
+    if [ "$(git status --short)" != "" ]; then
+        echo "error: branch is dirty"
+        exit 1
+    fi
+
+    rm -rf $DBT_PROJECT_DIR/prod-artefacts/
+    rm -rf target/
+
+    git switch main --quiet
+    uvx py-wait-until --message "Building production artefacts..." \
+        dbt parse --quiet --target prod --target-path prod-artefacts
+    echo '*' > $DBT_PROJECT_DIR/prod-artefacts/.gitignore
+    echo 'Production artefacts built!'
+
+    git switch - --quiet
+    uvx py-wait-until --message "Building feature branch artefacts..." \
+        dbt parse --quiet
+    echo 'Feature branch artefacts built!'
+"""
