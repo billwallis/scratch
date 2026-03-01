@@ -2,6 +2,7 @@
 
 [core]
     autocrlf = input
+    eol = lf
     editor = nano
     excludesfile = ~/.gitignore  # Switch to absolute path
 [fetch]
