@@ -4,7 +4,7 @@
     autocrlf = input
     eol = lf
     editor = nano
-    excludesfile = ~/.gitignore  # Switch to absolute path
+    excludesFile = ~/.gitignore  # Switch to absolute path
 [fetch]
     prune = true
 [grep]
