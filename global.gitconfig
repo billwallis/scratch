@@ -4,7 +4,8 @@
     autocrlf = input
     eol = lf
     editor = nano
-    excludesFile = ~/.gitignore  # Switch to absolute path
+    excludesFile = ~/.gitignore  # default is: '~/.config/git/ignore'
+    sshCommand = 'C:\\Windows\\System32\\OpenSSH\\ssh.exe'  # for Windows only
 [fetch]
     prune = true
 [grep]
