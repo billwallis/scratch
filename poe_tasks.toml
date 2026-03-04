@@ -2,6 +2,11 @@ verbosity = -1
 envfile.optional = ".env"
 
 [tasks]
+install.shell = """
+    #uv sync --all-groups --frozen
+    #uv pip install -r requirements.txt
+    pre-commit install --install-hooks
+"""
 lint.shell = """
     echo "\\033[0;34mpre-commit checks\\033[0m"
     SKIP=identity pre-commit run --all-files --hook-stage pre-commit
