@@ -50,6 +50,7 @@ repos:
     hooks:
       - id: dbt-autofix-fix
         args: ["--all"]
+        language_version: python3.13
 
   - repo: local
     hooks:
