@@ -9,9 +9,15 @@ install.shell = """
 """
 lint.shell = """
     echo "\\033[0;34mpre-commit checks\\033[0m"
-    SKIP=identity pre-commit run --all-files --hook-stage pre-commit
+    SKIP=identity pre-commit run --hook-stage pre-commit --all-files
     echo "\\033[0;34mpre-push checks\\033[0m"
-    SKIP=identity pre-commit run --all-files --hook-stage pre-push
+    SKIP=identity pre-commit run --hook-stage pre-push   --all-files
+"""
+lint-branch.shell = """
+    echo "\\033[0;34mpre-commit checks\\033[0m"
+    SKIP=identity pre-commit run --hook-stage pre-commit --from-ref main --to-ref HEAD
+    echo "\\033[0;34mpre-push checks\\033[0m"
+    SKIP=identity pre-commit run --hook-stage pre-push   --from-ref main --to-ref HEAD
 """
 clean.shell = """
     dbt clean --no-clean-project-files-only
