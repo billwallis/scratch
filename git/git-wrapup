@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+import pathlib
+import subprocess
+import re
+from collections.abc import Iterable
+
+RED = "\033[1;31m"
+GREEN = "\033[1;32m"
+YELLOW = "\033[1;33m"
+BLUE = "\033[1;34m"
+MAGENTA = "\033[1;35m"
+CYAN = "\033[1;36m"
+GREY = "\033[38;5;240m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+
+def colour(text: str, colour_: str) -> str:
+    """
+    Return the text in the given colour.
+    """
+
+    return f"{colour_}{text}{RESET}"
+
+
+def _run_git_cmd(
+    args: Iterable[str],
+    git_dir: pathlib.Path | None = None,
+    print_cmd: bool = False,
+) -> str:
+    cmds = ("git",) if git_dir is None else ("git", "-C", git_dir)
+    if print_cmd:
+        print(colour(" ".join((*cmds, *args)), BLUE + BOLD))
+
+    proc = subprocess.run(
+        args=(*cmds, *args),
+        check=True,  # Raise an exception on non-zero return codes
+        capture_output=True,
+    )
+    assert isinstance(proc.stdout, bytes)  # noqa: S101
+    return proc.stdout.decode().rstrip()
+
+
+def _get_branch_name_from_status(status: str) -> str:
+    matched, = re.findall("On branch ([0-9A-Za-z_-]+)", status)
+    if matched:
+        return matched
+    else:
+        raise ValueError("branch name not found")
+
+
+def main() -> int:
+    status = _run_git_cmd(("status",))
+    if "nothing to commit, working tree clean" not in status:
+        print(colour("error: git repository is dirty", RED))
+        return 1
+
+    try:
+        branch_name = _get_branch_name_from_status(status)
+    except ValueError as e:
+        print(colour(f"error: {e}", RED))
+        return 1
+
+    if branch_name == "main":
+        print(colour("error: not on feature branch", RED))
+        return 1
+
+    print(_run_git_cmd(("switch", "main"), print_cmd=True))
+    print(_run_git_cmd(
+        ("branch", "--delete", "--force", branch_name),
+        print_cmd=True,
+    ))
+    _run_git_cmd(("fetch",), print_cmd=True)
+    print(_run_git_cmd(("pull",), print_cmd=True))
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

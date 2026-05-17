@@ -1,0 +1,15 @@
+#!/usr/bin/env zsh
+
+# Detect the base branch (main or master)
+if git show-ref --verify --quiet refs/heads/main; then
+    base="main"
+elif git show-ref --verify --quiet refs/heads/master; then
+    base="master"
+else
+    echo "Error: Could not find main or master branch" >&2
+    exit 1
+fi
+
+git log $base..HEAD --format=%s --reverse | while IFS= read -r msg; do
+    echo "- ${msg}"
+done
