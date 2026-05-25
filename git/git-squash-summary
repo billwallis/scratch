@@ -73,6 +73,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("log", f"{base}..HEAD", "--format=%s", "--reverse"),
         print_cmd=False,
     )
+    if not logs:
+        return 0
     for log in logs.split("\n"):
         print(f"- {log}")
 
