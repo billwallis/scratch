@@ -43,17 +43,6 @@ def _run_git_cmd(
     return proc.stdout.decode().rstrip()
 
 
-def _verify_branch_name(branch_name: str) -> int:
-    try:
-        _run_git_cmd(
-            ("show-ref", "--verify", "--quiet", f"refs/heads/{branch_name}"),
-            print_cmd=False,
-        )
-        return 0
-    except subprocess.CalledProcessError:
-        return 1
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     """
     Parse the arguments and run the command.
@@ -64,19 +53,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
 
-    base = args.base
-    if _verify_branch_name(branch_name=base) != 0:
-        print(colour(f"error: could not find branch {base!r}", RED))
+    try:
+        logs = _run_git_cmd(
+            ("log", f"{args.base}..HEAD", "--format=%s", "--reverse"),
+            print_cmd=False,
+        )
+    except subprocess.CalledProcessError as e:
+        print(colour(e.stderr.decode().rstrip(), RED))
         return 1
 
-    logs = _run_git_cmd(
-        ("log", f"{base}..HEAD", "--format=%s", "--reverse"),
-        print_cmd=False,
-    )
-    if not logs:
-        return 0
-    for log in logs.split("\n"):
-        print(f"- {log}")
+    if logs:
+        for log in logs.split("\n"):
+            print(f"- {log}")
 
     return 0
 
