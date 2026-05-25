@@ -1,15 +1,83 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env python3
 
-# Detect the base branch (main or master)
-if git show-ref --verify --quiet refs/heads/main; then
-    base="main"
-elif git show-ref --verify --quiet refs/heads/master; then
-    base="master"
-else
-    echo "Error: Could not find main or master branch" >&2
-    exit 1
-fi
+import argparse
+import pathlib
+import subprocess
+import re
+from collections.abc import Iterable, Sequence
 
-git log $base..HEAD --format=%s --reverse | while IFS= read -r msg; do
-    echo "- ${msg}"
-done
+RED = "\033[1;31m"
+GREEN = "\033[1;32m"
+YELLOW = "\033[1;33m"
+BLUE = "\033[1;34m"
+MAGENTA = "\033[1;35m"
+CYAN = "\033[1;36m"
+GREY = "\033[38;5;240m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+
+def colour(text: str, colour_: str) -> str:
+    """
+    Return the text in the given colour.
+    """
+
+    return f"{colour_}{text}{RESET}"
+
+
+def _run_git_cmd(
+    args: Iterable[str],
+    git_dir: pathlib.Path | None = None,
+    print_cmd: bool = False,
+) -> str:
+    cmds = ("git",) if git_dir is None else ("git", "-C", git_dir)
+    if print_cmd:
+        print(colour(" ".join((*cmds, *args)), BLUE + BOLD))
+
+    proc = subprocess.run(
+        args=(*cmds, *args),
+        check=True,  # Raise an exception on non-zero return codes
+        capture_output=True,
+    )
+    assert isinstance(proc.stdout, bytes)  # noqa: S101
+    return proc.stdout.decode().rstrip()
+
+
+def _verify_branch_name(branch_name: str) -> int:
+    try:
+        _run_git_cmd(
+            ("show-ref", "--verify", "--quiet", f"refs/heads/{branch_name}"),
+            print_cmd=False,
+        )
+        return 0
+    except subprocess.CalledProcessError:
+        return 1
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """
+    Parse the arguments and run the command.
+    """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base", default="main")
+
+    args = parser.parse_args(argv)
+
+    base = args.base
+    if _verify_branch_name(branch_name=base) != 0:
+        print(colour(f"error: could not find branch {base!r}", RED))
+        return 1
+
+    logs = _run_git_cmd(
+        ("log", f"{base}..HEAD", "--format=%s", "--reverse"),
+        print_cmd=False,
+    )
+    for log in logs.split("\n"):
+        print(f"- {log}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
