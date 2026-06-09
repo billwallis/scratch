@@ -36,10 +36,11 @@ cte-lineage.shell = """
 """
 render.shell = """
     uvx py-wait-until --message "Rendering model..." \
-        dbt compile --quiet --inline "{{ ref('${model_name}') }}"
+        dbt compile --quiet --inline "{{ ref('${model_name}') }}" --target $target
 """
 render.args = [
     {name = "model_name", positional = true, required = true},
+    {name = "target", options = ["-t", "--target"], default = "dev"},
 ]
 dump-prod-state.shell = """
     if [ "$(git branch --show-current)" = "main" ]; then
