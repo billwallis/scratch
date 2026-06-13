@@ -43,7 +43,7 @@ def _run_git_cmd(
 
 
 def _get_branch_name_from_status(status: str) -> str:
-    matched, = re.findall("On branch ([0-9A-Za-z_-]+)", status)
+    (matched,) = re.findall("On branch ([0-9A-Za-z_-]+)", status)
     if matched:
         return matched
     else:
@@ -67,10 +67,12 @@ def main() -> int:
         return 1
 
     print(_run_git_cmd(("switch", "main"), print_cmd=True))
-    print(_run_git_cmd(
-        ("branch", "--delete", "--force", branch_name),
-        print_cmd=True,
-    ))
+    print(
+        _run_git_cmd(
+            ("branch", "--delete", "--force", branch_name),
+            print_cmd=True,
+        )
+    )
     _run_git_cmd(("fetch",), print_cmd=True)
     print(_run_git_cmd(("pull",), print_cmd=True))
 

@@ -49,11 +49,13 @@ def _run_git_cmd(
             yield line.rstrip("\n")
 
     popen.wait()
+    if popen.returncode != 0:
+        raise RuntimeError("git push returned a non-zero exit code")
 
 
 def _get_branch_name() -> str:
     status = "\n".join(_run_git_cmd(("status",)))
-    matched, = re.findall("On branch ([0-9A-Za-z_-]+)", status)
+    (matched,) = re.findall("On branch ([0-9A-Za-z_-]+)", status)
     if matched:
         return matched
     else:
@@ -74,7 +76,9 @@ def _ssh_to_http(ssh_url: str) -> str:
     ssh_pattern = r"git@([\w.]+):([\w-]+)/([\w-]+)"
     matches = re.compile(ssh_pattern).findall(ssh_url)
     if not matches:
-        raise ValueError(f"Could not handle SSH remote with URL '{ssh_url}'. Expected URL with pattern '{ssh_pattern}'")
+        raise ValueError(
+            f"Could not handle SSH remote with URL '{ssh_url}'. Expected URL with pattern '{ssh_pattern}'"
+        )
 
     host, owner, repo = matches[0]
     return f"https://{host}/{owner}/{repo}"
@@ -113,8 +117,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         try:
             for line in _run_git_cmd(("push",), print_cmd=True):
                 print(line)
-        except Exception as e:
-            print(colour(str(e), RED))
+        except RuntimeError:
             return 1
 
     print(colour(f"Opening PR at: {pull_request_url}", GREEN))
