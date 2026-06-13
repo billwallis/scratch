@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 import re
 import webbrowser
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Sequence, Generator
 
 RED = "\033[1;31m"
 GREEN = "\033[1;32m"
@@ -30,22 +30,29 @@ def _run_git_cmd(
     args: Iterable[str],
     git_dir: pathlib.Path | None = None,
     print_cmd: bool = False,
-) -> str:
+) -> Generator[str]:
     cmds = ("git",) if git_dir is None else ("git", "-C", git_dir)
     if print_cmd:
         print(colour(" ".join((*cmds, *args)), BLUE + BOLD))
 
-    proc = subprocess.run(
+    # https://stackoverflow.com/a/4417735
+    popen = subprocess.Popen(
         args=(*cmds, *args),
-        check=True,  # Raise an exception on non-zero return codes
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
     )
-    assert isinstance(proc.stdout, bytes)  # noqa: S101
-    return proc.stdout.decode().rstrip()
+    if popen.stdout:
+        for line in popen.stdout:
+            yield line.rstrip("\n")
+    if popen.stderr:
+        for line in popen.stderr:
+            yield line.rstrip("\n")
+
+    popen.wait()
 
 
 def _get_branch_name() -> str:
-    status = _run_git_cmd(("status",))
+    status = "\n".join(_run_git_cmd(("status",)))
     matched, = re.findall("On branch ([0-9A-Za-z_-]+)", status)
     if matched:
         return matched
@@ -55,9 +62,11 @@ def _get_branch_name() -> str:
 
 def _get_remote_url() -> str:
     origin_name = "origin"
-    return _run_git_cmd(
-        ("remote", "get-url", origin_name),
-        print_cmd=False,
+    return "\n".join(
+        _run_git_cmd(
+            ("remote", "get-url", origin_name),
+            print_cmd=False,
+        )
     )
 
 
@@ -95,7 +104,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.push:
         try:
-            print(_run_git_cmd(("push",), print_cmd=True))
+            for line in _run_git_cmd(("push",), print_cmd=True):
+                print(line)
         except Exception as e:
             print(colour(str(e), RED))
             return 1
