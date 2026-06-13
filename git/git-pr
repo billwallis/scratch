@@ -49,6 +49,8 @@ def _run_git_cmd(
             yield line.rstrip("\n")
 
     popen.wait()
+    if popen.returncode != 0:
+        raise RuntimeError("git push returned a non-zero exit code")
 
 
 def _get_branch_name() -> str:
@@ -113,8 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         try:
             for line in _run_git_cmd(("push",), print_cmd=True):
                 print(line)
-        except Exception as e:
-            print(colour(str(e), RED))
+        except RuntimeError:
             return 1
 
     print(colour(f"Opening PR at: {pull_request_url}", GREEN))
