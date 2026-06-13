@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
+import argparse
 import pathlib
 import subprocess
 import re
 import webbrowser
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 
 RED = "\033[1;31m"
 GREEN = "\033[1;32m"
@@ -71,7 +72,15 @@ def _github_pull_request_url(host_url: str, branch_name: str) -> str:
     return f"{host_url}/pull/new/{branch_name}"
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--push",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
+    args = parser.parse_args(argv)
+
     remote_url = _get_remote_url()
     if remote_url.startswith("git@"):
         http_url = _ssh_to_http(remote_url)
@@ -84,7 +93,14 @@ def main() -> int:
     else:
         raise NotImplementedError(f"Method not supported for {http_url}")
 
-    print(colour(f"Opening PR at: {pull_request_url}", GREY))
+    if args.push:
+        try:
+            print(_run_git_cmd(("push",), print_cmd=True))
+        except Exception as e:
+            print(colour(str(e), RED))
+            return 1
+
+    print(colour(f"Opening PR at: {pull_request_url}", GREEN))
     webbrowser.open(pull_request_url)
 
     return 0
