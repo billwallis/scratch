@@ -71,9 +71,12 @@ def _get_remote_url() -> str:
 
 
 def _ssh_to_http(ssh_url: str) -> str:
-    ssh_pattern = re.compile(r"git@([\w.]+):([\w-]+)/([\w-]+)")
-    host, owner, repo = ssh_pattern.findall(ssh_url)[0]
+    ssh_pattern = r"git@([\w.]+):([\w-]+)/([\w-]+)"
+    matches = re.compile(ssh_pattern).findall(ssh_url)
+    if not matches:
+        raise ValueError(f"Could not handle SSH remote with URL '{ssh_url}'. Expected URL with pattern '{ssh_pattern}'")
 
+    host, owner, repo = matches[0]
     return f"https://{host}/{owner}/{repo}"
 
 
@@ -92,7 +95,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     remote_url = _get_remote_url()
     if remote_url.startswith("git@"):
-        http_url = _ssh_to_http(remote_url)
+        try:
+            http_url = _ssh_to_http(remote_url)
+        except ValueError as e:
+            print(colour(f"error: {e}", RED))
+            return 1
     else:
         http_url = remote_url
 
