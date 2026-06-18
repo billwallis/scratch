@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
+import argparse
 import pathlib
 import subprocess
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 
-RED = "\033[1;31m"
-GREEN = "\033[1;32m"
-YELLOW = "\033[1;33m"
-BLUE = "\033[1;34m"
-MAGENTA = "\033[1;35m"
-CYAN = "\033[1;36m"
+RED = "\033[0;31m"
+GREEN = "\033[0;32m"
+YELLOW = "\033[0;33m"
+BLUE = "\033[0;34m"
+MAGENTA = "\033[0;35m"
+CYAN = "\033[0;36m"
 GREY = "\033[38;5;240m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
@@ -50,20 +51,29 @@ def _get_branch_name_from_status(status: str) -> str:
         raise ValueError("branch name not found")
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--allow-dirty",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
+    args = parser.parse_args(argv)
+
     status = _run_git_cmd(("status",))
-    if "nothing to commit, working tree clean" not in status:
-        print(colour("error: git repository is dirty", RED))
+    if (not args.allow_dirty) and "nothing to commit, working tree clean" not in status:
+        print(colour("error: git repository is dirty", RED + BOLD))
+        print(colour("run with `--allow-dirty` to continue anyway", RED))
         return 1
 
     try:
         branch_name = _get_branch_name_from_status(status)
     except ValueError as e:
-        print(colour(f"error: {e}", RED))
+        print(colour(f"error: {e}", RED + BOLD))
         return 1
 
     if branch_name == "main":
-        print(colour("error: not on feature branch", RED))
+        print(colour("error: not on feature branch", RED + BOLD))
         return 1
 
     print(_run_git_cmd(("switch", "main"), print_cmd=True))
