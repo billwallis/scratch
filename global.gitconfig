@@ -1,19 +1,46 @@
 ###    global git config  (~/.gitconfig)
+#
+#  https://blog.gitbutler.com/how-git-core-devs-configure-git
 
+[branch]
+    sort = -committerdate
+[column]
+    ui = auto
+[commit]
+    verbose = true
 [core]
     autocrlf = input
-    eol = lf
     editor = nano
+    eol = lf
     excludesFile = ~/.gitignore  # default is: '~/.config/git/ignore'
     sshCommand = 'C:\\Windows\\System32\\OpenSSH\\ssh.exe'  # for Windows only
+[diff]
+    algorithm = histogram
+    colorMoved = plain
+    mnemonicPrefix = true
+    renames = true
 [fetch]
+    all = true
     prune = true
+    pruneTags = true
 [grep]
     extendedRegexp = true
+[help]
+    autocorrect = prompt
 [init]
     defaultBranch = main
 [push]
     autoSetupRemote = true
+    followTags = true
+[rerere]
+    autoupdate = true
+    enabled = true
+[rebase]
+    autoSquash = true
+    autoStash = true
+    updateRefs = true
+[tag]
+    sort = version:refname
 [user]
-    name = ...
     email = ...
+    name = ...
