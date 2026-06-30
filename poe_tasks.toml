@@ -43,11 +43,11 @@ render.args = [
     {name = "target", options = ["-t", "--target"], default = "dev"},
 ]
 dump-prod-state.shell = """
-    if [ "$(git branch --show-current)" = "main" ]; then
+    if [[ "$(git branch --show-current)" = "main" ]]; then
         echo "error: must be on a feature branch"
         exit 1
     fi
-    if [ "$(git status --short)" != "" ]; then
+    if [[ ! $allow_dirty && "$(git status --short)" != "" ]]; then
         echo "error: branch is dirty"
         exit 1
     fi
@@ -66,3 +66,6 @@ dump-prod-state.shell = """
         dbt parse --quiet
     echo 'Feature branch artefacts built!'
 """
+dump-prod-state.args = [
+    {name = "allow_dirty", options = ["--allow-dirty"], type = "boolean", default = false},
+]
