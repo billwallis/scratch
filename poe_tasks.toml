@@ -69,3 +69,13 @@ dump-prod-state.shell = """
 dump-prod-state.args = [
     {name = "allow_dirty", options = ["--allow-dirty"], type = "boolean", default = false},
 ]
+slim-ci.shell = """
+    echo "\\033[0;34mpoe clean\\033[0m"
+    poe clean
+    echo "\\033[0;34mpoe dump-prod-state\\033[0m"
+    poe dump-prod-state
+    echo "\\033[0;34mdbt list (modified only)\\033[0m"
+    dbt list --resource-type model --select 'state:modified' --defer --state prod-artefacts/
+    echo "\\033[0;34mdbt build (modified + downstream)\\033[0m"
+    dbt build --select 'state:modified+' --defer --state prod-artefacts/
+"""
