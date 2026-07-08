@@ -2,6 +2,8 @@
 #
 #  https://blog.gitbutler.com/how-git-core-devs-configure-git
 
+[alias]
+    amend = commit --amend --no-edit
 [branch]
     sort = -committerdate
 [column]
