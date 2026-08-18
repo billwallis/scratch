@@ -15,9 +15,9 @@ lint.shell = """
 """
 lint-branch.shell = """
     echo "\\033[0;34mpre-commit checks\\033[0m"
-    SKIP=identity pre-commit run --hook-stage pre-commit --from-ref main --to-ref HEAD
+    SKIP=identity pre-commit run --hook-stage pre-commit --from-ref $(git merge-base main HEAD) --to-ref HEAD
     echo "\\033[0;34mpre-push checks\\033[0m"
-    SKIP=identity pre-commit run --hook-stage pre-push   --from-ref main --to-ref HEAD
+    SKIP=identity pre-commit run --hook-stage pre-push   --from-ref $(git merge-base main HEAD) --to-ref HEAD
 """
 clean.shell = """
     dbt clean --no-clean-project-files-only
@@ -55,25 +55,30 @@ dump-prod-state.shell = """
     rm -rf $DBT_PROJECT_DIR/prod-artefacts/
     rm -rf target/
 
-    git switch main --quiet
+    git checkout $(git merge-base main HEAD) --quiet
     uvx py-wait-until --message "Building production artefacts..." \
         dbt parse --quiet --target prod --target-path prod-artefacts
     echo '*' > $DBT_PROJECT_DIR/prod-artefacts/.gitignore
-    echo 'Production artefacts built!'
+    if [[ ! ${quiet} ]]; then
+        echo 'Production artefacts built!'
+    fi
 
     git switch - --quiet
     uvx py-wait-until --message "Building feature branch artefacts..." \
         dbt parse --quiet
-    echo 'Feature branch artefacts built!'
+    if [[ ! ${quiet} ]]; then
+        echo 'Feature branch artefacts built!'
+    fi
 """
 dump-prod-state.args = [
     {name = "allow_dirty", options = ["--allow-dirty"], type = "boolean", default = false},
+    {name = "quiet", type = "boolean", default = false},
 ]
 slim-ci.shell = """
     echo "\\033[0;34mpoe clean\\033[0m"
-    poe clean
+    poe clean || exit 1
     echo "\\033[0;34mpoe dump-prod-state\\033[0m"
-    poe dump-prod-state
+    poe dump-prod-state || exit 1
     echo "\\033[0;34mdbt list (modified only)\\033[0m"
     dbt list --resource-type model --select 'state:modified' --defer --state prod-artefacts/
     echo "\\033[0;34mdbt build (modified + downstream)\\033[0m"
