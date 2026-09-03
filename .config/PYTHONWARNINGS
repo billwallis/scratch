@@ -1,0 +1,3 @@
+ignore::UserWarning:google.auth._default
+ignore::FutureWarning:dbt.adapters.bigquery.connections
+ignore::UserWarning:google.cloud.bigquery.client
