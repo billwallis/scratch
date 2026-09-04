@@ -25,6 +25,19 @@ clean.shell = """
     rm -rf logs/
     dbt deps
 """
+compile.shell = """
+    poe clean
+    dbt compile --target prod
+"""
+compile-v2.shell = """
+    # Write the Parquet files...
+    dbt compile --write-metadata --write-lineage --no-warn-error --target ${target}
+    # ...and the `manifest.json`
+    dbt compile --no-warn-error --target ${target}
+"""
+compile-v2.args = [
+    {name = "target", options = ["-t", "--target"], default = "dev"},
+]
 docs.shell = """
     dbt docs generate
     uvx --from dbt-colibri colibri generate
@@ -34,6 +47,9 @@ docs.shell = """
 cte-lineage.shell = """
     find -P target/compiled -name '*.sql' | xargs -n 1 -P 8 lineage
 """
+autofix.shell = """
+    uvx --python 3.13 dbt-autofix deprecations --all
+"""
 render.shell = """
     uvx py-wait-until --message "Rendering model..." \
         dbt compile --quiet --inline "{{ ref('${model_name}') }}" --target $target
@@ -41,6 +57,31 @@ render.shell = """
 render.args = [
     {name = "model_name", positional = true, required = true},
     {name = "target", options = ["-t", "--target"], default = "dev"},
+]
+render-v2.shell = """
+    duckdb -noheader -ascii -c \
+        "select relation_name from 'target/metadata/parse/nodes/*.parquet' where name = '${model_name}'"
+"""
+render-v2.args = [
+    {name = "model_name", positional = true, required = true},
+]
+info.shell = """
+    duckdb -box -c "unpivot (select * exclude (payload, description) from 'target/metadata/parse/nodes/*.parquet' where "name" = '${node_name}') on columns(*)::text into name key values value"
+"""
+info.args = [
+    {name = "node_name", positional = true, required = true},
+]
+document-model.shell = """
+    uvx dbt-osmosis yaml document ${model_name} --target prod
+"""
+document-model.args = [
+    {name = "model_name", positional = true, required = true},
+]
+test-model.shell = """
+    dbt test --target prod --indirect-selection cautious --select "resource_type:test,${model_name}"
+"""
+test-model.args = [
+    {name = "model_name", positional = true, required = true},
 ]
 dump-prod-state.shell = """
     if [[ "$(git branch --show-current)" = "main" ]]; then
