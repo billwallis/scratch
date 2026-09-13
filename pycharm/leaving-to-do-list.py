@@ -109,12 +109,9 @@ def main() -> int:
     all(run_cmd(("git", "meta", "update", str(HOME / "repos"))))
     for line in run_cmd(
         cmds=(
-            "git",
-            "meta",
-            "report",
-            str(HOME / "repos"),
-            "--exclude",
-            ".*/daily-tracker",
+            *("git", "meta"),
+            *("report", str(HOME / "repos")),
+            *("--exclude", ".*/daily-tracker"),
         ),
         print_cmd=True,
     ):
