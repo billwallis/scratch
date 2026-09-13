@@ -2,11 +2,6 @@ verbosity = -1
 envfile.optional = ".env"
 
 [tasks]
-install.shell = """
-    #uv sync --all-groups --frozen
-    #uv pip install -r requirements.txt
-    pre-commit install --install-hooks
-"""
 lint.shell = """
     echo "\\033[0;34mpre-commit checks\\033[0m"
     SKIP=identity pre-commit run --hook-stage pre-commit --all-files
@@ -40,7 +35,7 @@ compile-v2.args = [
 ]
 docs.shell = """
     dbt docs generate
-    uvx --from dbt-colibri colibri generate
+    pipx run --spec dbt-colibri colibri generate
     open dist/index.html
     dbt docs serve
 """
@@ -48,10 +43,10 @@ cte-lineage.shell = """
     find -P target/compiled -name '*.sql' | xargs -n 1 -P 8 lineage
 """
 autofix.shell = """
-    uvx --python 3.13 dbt-autofix deprecations --all
+    pipx run --python 3.13 dbt-autofix deprecations --all
 """
 render.shell = """
-    uvx py-wait-until --message "Rendering model..." \
+    pipx run py-wait-until --message "Rendering model..." \
         dbt compile --quiet --inline "{{ ref('${model_name}') }}" --target $target
 """
 render.args = [
@@ -72,7 +67,7 @@ info.args = [
     {name = "node_name", positional = true, required = true},
 ]
 document-model.shell = """
-    uvx dbt-osmosis yaml document ${model_name} --target prod
+    pipx run dbt-osmosis yaml document ${model_name} --target prod
 """
 document-model.args = [
     {name = "model_name", positional = true, required = true},
@@ -97,7 +92,7 @@ dump-prod-state.shell = """
     rm -rf target/
 
     git checkout $(git merge-base main HEAD) --quiet
-    uvx py-wait-until --message "Building production artefacts..." \
+    pipx run py-wait-until --message "Building production artefacts..." \
         dbt parse --quiet --target prod --target-path prod-artefacts
     echo '*' > $DBT_PROJECT_DIR/prod-artefacts/.gitignore
     if [[ ! ${quiet} ]]; then
@@ -105,7 +100,7 @@ dump-prod-state.shell = """
     fi
 
     git switch - --quiet
-    uvx py-wait-until --message "Building feature branch artefacts..." \
+    pipx run py-wait-until --message "Building feature branch artefacts..." \
         dbt parse --quiet
     if [[ ! ${quiet} ]]; then
         echo 'Feature branch artefacts built!'
