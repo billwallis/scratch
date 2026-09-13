@@ -69,7 +69,7 @@ def get_jetbrains_path(platform: str) -> pathlib.Path:
 def get_console_pattern(jetbrains_path: pathlib.Path) -> re.Pattern:
     # <jetbrains path>/<versioned IDE>/consoles/db/<uuid>/console.sql
     return re.compile(
-        fr"{jetbrains_path.as_posix()}/(?P<tool>[\w. ]+)/consoles/db/(?P<uuid>[0-9a-f-]{{36}})/console\.sql"
+        rf"{jetbrains_path.as_posix()}/(?P<tool>[\w. ]+)/consoles/db/(?P<uuid>[0-9a-f-]{{36}})/console\.sql"
     )
 
 
@@ -97,9 +97,13 @@ def write_console(
     source_console: ConsolePath,
     target_directory: pathlib.Path,
 ) -> None:
-    target_console_path = target_directory / source_console.tool / f"{source_console.uuid}.sql"
+    target_console_path = (
+        target_directory / source_console.tool / f"{source_console.uuid}.sql"
+    )
     target_console_path.parent.mkdir(parents=True, exist_ok=True)
-    logger.debug(colour(f"copying '{source_console.path}' to '{target_console_path}'", GREEN))
+    logger.debug(
+        colour(f"copying '{source_console.path}' to '{target_console_path}'", GREEN)
+    )
     shutil.copy(
         src=source_console.path,
         dst=target_console_path,

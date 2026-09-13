@@ -108,7 +108,14 @@ def main() -> int:
     print("Outstanding git work")
     all(run_cmd(("git", "meta", "update", str(HOME / "repos"))))
     for line in run_cmd(
-        cmds=("git", "meta", "report", str(HOME / "repos"), "--exclude", ".*/daily-tracker"),
+        cmds=(
+            "git",
+            "meta",
+            "report",
+            str(HOME / "repos"),
+            "--exclude",
+            ".*/daily-tracker",
+        ),
         print_cmd=True,
     ):
         print(line)
