@@ -34,21 +34,21 @@ repos:
       - id: check-pre-commit-ci-config
 
   - repo: https://github.com/billwallis/bills-hooks
-    rev: v0.0.15
+    rev: v0.0.16
     hooks:
       - id: banned-python-code
       - id: check-no-commit-comment
       - id: tidy-gitkeep
 
   - repo: https://github.com/dbt-labs/dbt-autofix
-    rev: v0.21.0
+    rev: v0.22.6
     hooks:
       - id: dbt-autofix-fix
         args: ["--all"]
         language_version: python3.13
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.0
+    rev: 0.38.2
     hooks:
       - id: check-github-workflows
       - id: check-compose-spec
