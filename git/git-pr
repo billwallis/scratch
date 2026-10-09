@@ -17,6 +17,8 @@ GREY = "\033[38;5;240m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
+DEFAULT_BRANCH_NAMES = ["main", "master"]
+
 
 def colour(text: str, colour_: str) -> str:
     """
@@ -114,6 +116,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise NotImplementedError(f"Method not supported for {http_url}")
 
     if args.push:
+        if branch_name in DEFAULT_BRANCH_NAMES:
+            # not gonna bother implementing something like `--force` -- if the
+            # branch needs to be pushed, just use `git push` directly
+            print(colour(f"error: pushes to the default branch are prohibited", RED))
+            return 1
         try:
             for line in _run_git_cmd(("push",), print_cmd=True):
                 print(line)
