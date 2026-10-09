@@ -22,6 +22,9 @@
 ##############################
 ###    Custom shadizzle    ###
 
+### disable pip update warning
+PIP_DISABLE_PIP_VERSION_CHECK=1
+
 ### change text editor  (default is Vim)
 EDITOR=nano
 VISUAL=$EDITOR
