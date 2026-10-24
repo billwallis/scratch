@@ -81,6 +81,9 @@ def _get_default_branch() -> str:
     We just take the final line and parse the name out of it.
     """
 
+    # TODO: Can we do something with:
+    #       git name-rev --name-only $(git show-branch --merge-base)
+
     branch_lines = filter(lambda s: s.strip(), _run_git_cmd(("show-branch",)))
     line = list(branch_lines)[-1]
     match = re.search(r"\[([a-zA-Z0-9-]+)]", line)
