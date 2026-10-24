@@ -35,7 +35,7 @@ def _run_git_cmd(
 ) -> Generator[str]:
     cmds = ("git",) if git_dir is None else ("git", "-C", git_dir)
     if print_cmd:
-        print(colour(" ".join((*cmds, *args)), BLUE + BOLD))
+        print(colour(" ".join([*cmds, *args]), BLUE + BOLD))
 
     # https://stackoverflow.com/a/4417735
     popen = subprocess.Popen(
@@ -56,12 +56,7 @@ def _run_git_cmd(
 
 
 def _get_branch_name() -> str:
-    status = "\n".join(_run_git_cmd(("status",)))
-    (matched,) = re.findall("On branch ([0-9A-Za-z_-]+)", status)
-    if matched:
-        return matched
-    else:
-        raise ValueError("branch name not found")
+    return next(_run_git_cmd(("branch", "--show-current")))
 
 
 def _get_remote_url() -> str:
