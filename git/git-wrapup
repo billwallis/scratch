@@ -3,7 +3,6 @@
 import argparse
 import pathlib
 import subprocess
-import re
 from collections.abc import Iterable, Sequence
 
 RED = "\033[0;31m"
@@ -32,7 +31,7 @@ def _run_git_cmd(
 ) -> str:
     cmds = ("git",) if git_dir is None else ("git", "-C", git_dir)
     if print_cmd:
-        print(colour(" ".join((*cmds, *args)), BLUE + BOLD))
+        print(colour(" ".join([*cmds, *args]), BLUE + BOLD))
 
     proc = subprocess.run(
         args=(*cmds, *args),
@@ -41,14 +40,6 @@ def _run_git_cmd(
     )
     assert isinstance(proc.stdout, bytes)  # noqa: S101
     return proc.stdout.decode().rstrip()
-
-
-def _get_branch_name_from_status(status: str) -> str:
-    (matched,) = re.findall("On branch ([0-9A-Za-z_-]+)", status)
-    if matched:
-        return matched
-    else:
-        raise ValueError("branch name not found")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -66,12 +57,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(colour("run with `--allow-dirty` to continue anyway", RED))
         return 1
 
-    try:
-        branch_name = _get_branch_name_from_status(status)
-    except ValueError as e:
-        print(colour(f"error: {e}", RED + BOLD))
-        return 1
-
+    branch_name = _run_git_cmd(("branch", "--show-current"))
     if branch_name == "main":
         print(colour("error: not on feature branch", RED + BOLD))
         return 1
@@ -83,7 +69,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print_cmd=True,
         )
     )
-    _run_git_cmd(("fetch",), print_cmd=True)
+    _run_git_cmd(("fetch", "--prune"), print_cmd=True)
     print(_run_git_cmd(("pull",), print_cmd=True))
 
     return 0
