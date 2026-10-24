@@ -83,7 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print_cmd=True,
         )
     )
-    _run_git_cmd(("fetch",), print_cmd=True)
+    _run_git_cmd(("fetch", "--prune"), print_cmd=True)
     print(_run_git_cmd(("pull",), print_cmd=True))
 
     return 0
