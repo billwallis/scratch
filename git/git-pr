@@ -4,8 +4,11 @@ import argparse
 import pathlib
 import subprocess
 import re
+import urllib.parse
+import warnings
 import webbrowser
 from collections.abc import Iterable, Sequence, Generator
+from typing import Any
 
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
@@ -59,6 +62,33 @@ def _get_branch_name() -> str:
     return next(_run_git_cmd(("branch", "--show-current")))
 
 
+def _get_default_branch() -> str:
+    """
+    Return the default branch for the current repository.
+
+    `git show-branch` shows the branches and across branches, for example:
+
+        * [bar] feat: and one more thing
+         ! [foo] feat: another thing
+          ! [main] Initial commit
+        ---
+        *   [bar] feat: and one more thing
+        *+  [foo] feat: another thing
+        *+  [foo^] feat: something else
+        *+  [foo~2] feat: something
+        *++ [main] Initial commit
+
+    We just take the final line and parse the name out of it.
+    """
+
+    branch_lines = filter(lambda s: s.strip(), _run_git_cmd(("show-branch",)))
+    line = list(branch_lines)[-1]
+    match = re.search(r"\[([a-zA-Z0-9-]+)]", line)
+    assert match is not None, f"could not find branch name in line: {line}"
+
+    return match.group(1)
+
+
 def _get_remote_url() -> str:
     origin_name = "origin"
     return "\n".join(
@@ -85,6 +115,83 @@ def _github_pull_request_url(host_url: str, branch_name: str) -> str:
     return f"{host_url}/pull/new/{branch_name}"
 
 
+def _github_pull_request_url_with_params(
+    host_url: str,
+    branch_name: str,
+    parameters: dict[str, str],
+) -> str:
+    """
+    https://docs.github.com/en/pull-requests/reference/using-query-parameters-to-create-a-pull-request
+    """
+    # This isn't the "preferred" route since we have to guess the base
+    # branch name, but that's required for the URL to support params
+
+    def _parse(value: Any) -> Any:
+        if isinstance(value, list):
+            return ",".join(value)
+        else:
+            return value
+
+    params = urllib.parse.urlencode(
+        {"quick_pull": 1} | {k: _parse(v) for k, v in parameters.items()},
+        safe=",",
+    )
+
+    # Assume we always want to merge back to the base branch, not any
+    # intermediate branches (e.g. `main` -> `foo` -> `bar` would merge `bar`
+    # into `main`)
+    base_branch = _get_default_branch()
+    if base_branch not in DEFAULT_BRANCH_NAMES:
+        warnings.warn(
+            f"'{base_branch}' detected as default branch, which is not one of {DEFAULT_BRANCH_NAMES}",
+            stacklevel=1,
+        )
+
+    return f"{host_url}/compare/{base_branch}...{branch_name}?{params}"
+
+
+def _parse_values(key: str, values: list) -> tuple[str, Any]:
+    if len(values) == 0:
+        if key.startswith("no-"):
+            return key[3:], False
+        else:
+            return key, True
+    elif len(values) == 1:
+        return key, values[0]
+    else:
+        return key, values
+
+
+def collect_unknown_args(args: list[str]) -> dict[str, str]:
+    if not args:
+        return {}
+
+    if not args[0].startswith("--"):
+        raise ValueError(f"could not parse unknown args: first argument must be a flag, not a value")
+
+    key, values = None, []
+    result = dict()
+    for item in args:
+        if item == "--":
+            raise ValueError("'--' is unsupported")
+        if item.startswith("--"):
+            if key is not None:
+                k, v = _parse_values(key, values)
+                result[k] = v
+
+            key = item[2:]
+            values = []
+        else:
+            assert key is not None
+            values.append(item)
+
+    assert key is not None
+    k, v = _parse_values(key, values)
+    result[k] = v
+
+    return result
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -92,7 +199,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         action=argparse.BooleanOptionalAction,
         default=False,
     )
-    args = parser.parse_args(argv)
+    args, unknown_args = parser.parse_known_args(argv)
 
     remote_url = _get_remote_url()
     if remote_url.startswith("git@"):
@@ -106,7 +213,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     branch_name = _get_branch_name()
     if http_url.startswith("https://github.com"):
-        pull_request_url = _github_pull_request_url(http_url, branch_name)
+        if unknown_args:
+            pull_request_url = _github_pull_request_url_with_params(
+                http_url,
+                branch_name,
+                parameters=collect_unknown_args(unknown_args),
+            )
+        else:
+            pull_request_url = _github_pull_request_url(http_url, branch_name)
     else:
         raise NotImplementedError(f"Method not supported for {http_url}")
 
