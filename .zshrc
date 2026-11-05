@@ -38,12 +38,12 @@ eval "$(direnv hook zsh)"
 
 ### load .env file at dir  (use direnv instead)
 #if source $PWD/.env &> /dev/null; then
-#    echo -e "\033[1;32mSuccessfully loaded .env file at $PWD\033[0m"
+#  echo -e "\033[1;32mSuccessfully loaded .env file at $PWD\033[0m"
 #fi
 
 ### set custom aliases
 get-no() {
-    echo "\033[0;34m$(curl https://naas.isalman.dev/no --silent | jq .reason)\033[0m"
+  echo "\033[0;34m$(curl https://naas.isalman.dev/no --silent | jq --raw-output '.reason')\033[0m"
 }
 
 ### change terminal prompt  (https://stackoverflow.com/q/67587439/8213085)
