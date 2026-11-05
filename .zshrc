@@ -4,6 +4,10 @@
 ### default zsh config
 . "$HOME/.local/bin/env"
 
+### enable `#` as comments - https://stackoverflow.com/a/11873793/8213085
+setopt interactivecomments
+
+
 ### enable plugins
 # plugins=(
 # 	git
