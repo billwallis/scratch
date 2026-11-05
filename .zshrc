@@ -61,6 +61,10 @@ precmd() {
 
 ### flag "incorrect" git remotes  (I only want SSH remotes formatted in a specific way)
 flag-git-remote() {
+  if [[ ! (-e .git) ]]; then
+    return
+  fi
+
   PATTERN_HTTP='^https:\/\/github\.com\/([0-9A-Za-z_-]+)\/([0-9A-Za-z_-]+)(\.git)?$'
   PATTERN_SSH='^git@github.com:\/?([0-9A-Za-z_-]+)\/([0-9A-Za-z_-]+)(.git)?$'
   REPLACE='git@github.com:\1\/\2'
