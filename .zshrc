@@ -4,6 +4,10 @@
 ### default zsh config
 . "$HOME/.local/bin/env"
 
+### enable `#` as comments - https://stackoverflow.com/a/11873793/8213085
+setopt interactivecomments
+
+
 ### enable plugins
 # plugins=(
 # 	git
@@ -34,12 +38,12 @@ eval "$(direnv hook zsh)"
 
 ### load .env file at dir  (use direnv instead)
 #if source $PWD/.env &> /dev/null; then
-#    echo -e "\033[1;32mSuccessfully loaded .env file at $PWD\033[0m"
+#  echo -e "\033[1;32mSuccessfully loaded .env file at $PWD\033[0m"
 #fi
 
 ### set custom aliases
 get-no() {
-    echo "\033[0;34m$(curl https://naas.isalman.dev/no --silent | jq .reason)\033[0m"
+  echo "\033[0;34m$(curl https://naas.isalman.dev/no --silent | jq --raw-output '.reason')\033[0m"
 }
 
 ### change terminal prompt  (https://stackoverflow.com/q/67587439/8213085)
@@ -55,16 +59,21 @@ precmd() {
   PROMPT="%{%F{blue}%}%n%{%f%} @ %{%F{yellow}%}%2~%{%f%}%F{green}$branch%{%f%}%{%F{#808080}$venv%f%}"$'\n'"%# "
 }
 
-### flag HTTPS git remotes
-flag-http-git-remote() {
-  remote=$(git remote get-url origin 2>/dev/null)
-  if [[ -n $remote ]];
-    then if [[ $remote == http* ]];
-      then echo "\033[1;31mhttp remote detected: $remote\033[0m"
-    fi
+### flag "incorrect" git remotes  (I only want SSH remotes formatted in a specific way)
+flag-git-remote() {
+  PATTERN_HTTP='^https:\/\/github\.com\/([0-9A-Za-z_-]+)\/([0-9A-Za-z_-]+)(\.git)?$'
+  PATTERN_SSH='^git@github.com:\/?([0-9A-Za-z_-]+)\/([0-9A-Za-z_-]+)(.git)?$'
+  REPLACE='git@github.com:\1\/\2'
+  REMOTE_NAME='origin'
+  CURRENT_URL=$(git remote get-url $REMOTE_NAME 2>/dev/null)
+  NORMALISED_URL=$(git remote get-url $REMOTE_NAME | sed -E "s/$PATTERN_HTTP/$REPLACE/" | sed -E "s/$PATTERN_SSH/$REPLACE/")
+
+  if [[ $CURRENT_URL != $NORMALISED_URL ]]; then
+    echo "\033[1;31mincorrect remote detected:\033[0m $CURRENT_URL"
+    echo "\033[1;31mrun the following to fix it:\033[0m git remote set-url $REMOTE_NAME $NORMALISED_URL"
   fi
 }
-flag-http-git-remote
+flag-git-remote
 
 
 ############################
