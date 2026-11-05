@@ -1,14 +1,13 @@
+#!/usr/bin/env python
+
 import os
 import sys
-import termios
-import tty
-
-if sys.platform == "win32":
-    print(f"error: platform {sys.platform!r} not supported")
-    raise SystemExit(2)
 
 
-def _getch() -> str:
+# TODO: Add dictionary of "known" keys
+
+
+def _getch() -> bytes:
     """
     Prompt for single-key user input.
 
@@ -21,12 +20,24 @@ def _getch() -> str:
     Retrieved 2026-10-30, License - CC BY-SA 3.0
     """
 
-    old_settings = termios.tcgetattr(sys.stdin)
-    tty.setcbreak(sys.stdin.fileno())
-    try:
-        return os.read(sys.stdin.fileno(), 32).decode()
-    finally:
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+    if sys.platform == "win32":
+        import msvcrt
+
+        key = msvcrt.getch()
+        if key in (bytes([0]), bytes([224])):
+            key = key + msvcrt.getch()
+
+        return key
+    else:
+        import termios
+        import tty
+
+        old_settings = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin.fileno())
+        try:
+            return os.read(sys.stdin.fileno(), 32)
+        finally:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
 def main() -> int:
